@@ -755,20 +755,6 @@ void showScoringRules() {
                   'Cada equipo clasificado  +5',
                 ),
 
-                SizedBox(height: 16),
-
-                Text(
-                  'Premios individuales',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                SizedBox(height: 8),
-
-                Text('Máximo goleador  +10'),
-                Text('Mejor jugador  +10'),
-
                 Divider(height: 32),
 
                 Text(
@@ -815,6 +801,19 @@ void showScoringRules() {
                 Text('Finalista  +15'),
                 Text('Campeón  +20'),
                 Text('Subcampeón  +15'),
+                SizedBox(height: 16),
+
+                Text(
+                  'Premios individuales',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                SizedBox(height: 8),
+
+                Text('Máximo goleador  +10'),
+                Text('Mejor jugador  +10'),
               ],
             ),
           ),
