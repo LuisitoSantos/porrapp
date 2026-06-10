@@ -999,4 +999,9 @@ Player(
   name: 'Nemanja Gudelj',
   team: 'Serbia',
 ),
+
+Player(
+  name: 'Otro',
+  team: 'Spain',
+),
 ];
