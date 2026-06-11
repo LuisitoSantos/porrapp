@@ -10,6 +10,7 @@ import 'dart:convert';
 import '../../../core/supabase/supabase_client.dart';
 import '../../tournament/services/group_stage_calculator.dart';
 import '../../../core/utils/flag_utils.dart';
+import '../../../core/services/local_storage_service.dart';
 
 class GroupStageScreen extends StatefulWidget {
 
@@ -497,7 +498,7 @@ Future<void> submitPrediction() async {
       .from('predictions')
       .insert({
         'user_id':
-            supabase.auth.currentUser!.id,
+           await CurrentUser.getId(),
         'room_id':
             widget.roomId,
         'prediction_type':

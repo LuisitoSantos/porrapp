@@ -6,6 +6,7 @@ import 'features/home/screens/home_screen.dart';
 import 'features/onboarding/screens/username_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/supabase/supabase_client.dart';
+import 'features/onboarding/screens/login_screen.dart';
 
 void main()async  {
    WidgetsFlutterBinding.ensureInitialized();
@@ -20,18 +21,17 @@ void main()async  {
 
 class PorrApp extends StatelessWidget {
   const PorrApp({super.key});
-  
 
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: StartupScreen(),
     );
   }
 }
 
-class StartupScreen
-    extends StatefulWidget {
+class StartupScreen extends StatefulWidget {
   const StartupScreen({super.key});
 
   @override
@@ -41,11 +41,12 @@ class StartupScreen
 
 class _StartupScreenState
     extends State<StartupScreen> {
+
   final storage =
       LocalStorageService();
 
   String? username;
-  String? userId;
+  String? email;
 
   @override
   void initState() {
@@ -54,62 +55,148 @@ class _StartupScreenState
   }
 
   Future<void> loadUser() async {
+
     final savedUsername =
         await storage.getUsername();
 
-    final savedUserId =
+    final savedEmail =
         await storage.getUserId();
+
+    if (!mounted) return;
 
     setState(() {
       username = savedUsername;
-      userId = savedUserId;
+      email = savedEmail;
     });
   }
 
-  Future<void> login() async {
-  if (
-    supabase.auth.currentUser ==
-        null
-  ) {
-    await supabase.auth
-        .signInAnonymously();
-  }
-}
-
   @override
   Widget build(BuildContext context) {
-    if (username == null) {
-      return UsernameScreen(
-        onContinue: (name) async {
-          await login();
-          await supabase
-            .from('profiles')
-            .insert({
-              'user_id':
-                  supabase.auth.currentUser!.id,
-              'username': name,
-            });
 
-          const uuid = Uuid();
+    if (
+      username == null ||
+      email == null
+    ) {
 
-        final generatedUserId = uuid.v4();
-
-        await storage.saveUser(
-          id: generatedUserId,
-          username: name,
-        );
-
-        setState(() {
-          username = name;
-          userId = generatedUserId;
-        });
-        },
+      return LoginScreen(
+        onRegister: registerUser,
+        onLogin: loginUser,
       );
     }
 
     return HomeScreen(
       username: username!,
-      userId: userId!,
+      user_id: email!,
     );
   }
+
+  Future<void> registerUser(
+    String email,
+    String username,
+  ) async {
+
+    if (email.trim().isEmpty) {
+      showError(
+        'Introduce un email',
+      );
+      return;
+    }
+
+    if (!email.contains('@')) {
+      showError(
+        'Email no válido',
+      );
+      return;
+    }
+
+    final existing =
+        await supabase
+            .from('profiles')
+            .select()
+            .eq(
+              'user_id',
+              email,
+            )
+            .maybeSingle();
+
+    if (existing != null) {
+      showError(
+        'Ese email ya existe',
+      );
+      return;
+    }
+
+    if (username.trim().isEmpty) {
+      showError(
+        'Introduce un nombre de usuario',
+      );
+      return;
+    }
+
+    await supabase
+        .from('profiles')
+        .insert({
+      'user_id': email,
+      'username': username,
+    });
+
+    await storage.saveUser(
+      id: email,
+      username: username,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      this.email = email;
+      this.username = username;
+    });
+  }
+
+  Future<void> loginUser(
+    String email,
+  ) async {
+
+    final profile =
+        await supabase
+            .from('profiles')
+            .select()
+            .eq(
+              'user_id',
+              email,
+            )
+            .maybeSingle();
+
+    if (profile == null) {
+      showError(
+        'Usuario no encontrado',
+      );
+      return;
+    }
+
+    await storage.saveUser(
+      id: email,
+      username:
+          profile['username'],
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      this.email = email;
+      username =
+          profile['username'];
+    });
+  }
+
+  void showError(
+  String message,
+) {
+  ScaffoldMessenger.of(context)
+      .showSnackBar(
+    SnackBar(
+      content: Text(message),
+    ),
+  );
+}
 }

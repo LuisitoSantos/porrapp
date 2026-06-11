@@ -12,6 +12,7 @@ import '../../tournament/config/world_cup_players.dart';
 import '../models/prediction_result.dart';
 import 'dart:convert';
 import '../../../core/supabase/supabase_client.dart';
+import '../../../core/services/local_storage_service.dart';
 
 class GroupStageScreen extends StatefulWidget {
 
@@ -1036,7 +1037,7 @@ Future<void> submitPrediction() async {
         .from('predictions')
         .insert({
           'user_id':
-              supabase.auth.currentUser!.id,
+              await CurrentUser.getId(),
 
           'room_id':
               widget.roomId,

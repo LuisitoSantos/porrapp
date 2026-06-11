@@ -40,3 +40,11 @@ class LocalStorageService {
     );
   }
 }
+
+class CurrentUser {
+
+  static Future<String> getId() async {
+    return await LocalStorageService()
+        .getUserId() ?? '';
+  }
+}

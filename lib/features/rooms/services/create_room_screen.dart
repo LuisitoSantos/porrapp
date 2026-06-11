@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/room_service.dart';
+import '../../../core/services/local_storage_service.dart';
 
 class CreateRoomScreen
     extends StatefulWidget {
@@ -54,7 +55,7 @@ final roomService =
                     roomName:
                         controller.text,
                     ownerId:
-                        supabase.auth.currentUser!.id,
+                        await CurrentUser.getId(),
                   );
                 },
                 child: const Text(

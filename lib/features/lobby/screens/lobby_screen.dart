@@ -24,6 +24,7 @@ class LobbyScreen extends StatefulWidget {
 }
 
 class _LobbyScreenState extends State<LobbyScreen> {
+  String? currentUserId;
 
   bool knockoutEnabled = false;
 
@@ -48,7 +49,7 @@ bool knockoutSubmitted = false;
 
     final isAdmin =
     widget.room.ownerId ==
-    supabase.auth.currentUser!.id;
+    currentUserId;
     
     
     return Scaffold(
@@ -65,12 +66,12 @@ bool knockoutSubmitted = false;
     ? const Center(
         child: CircularProgressIndicator(),
       )
-    : Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-          children: [
+        : SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
             Text(
               'Código: ${widget.room.code}',
               style: const TextStyle(
@@ -222,6 +223,7 @@ bool knockoutSubmitted = false;
           ],
         ),
       ),
+        )
     );
   }
 
@@ -232,6 +234,9 @@ void initState() {
 }
 
 Future<void> initializeLobby() async {
+
+  currentUserId =
+    await CurrentUser.getId();
 
   await loadMembers();
   await loadSettings();

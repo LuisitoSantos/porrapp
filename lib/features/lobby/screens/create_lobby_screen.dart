@@ -4,6 +4,7 @@ import '../models/lobby.dart';
 import 'lobby_screen.dart';
 import '../../rooms/services/room_service.dart';
 import '../../rooms/models/room.dart';
+import '../../../core/services/local_storage_service.dart';
 
 class CreateLobbyScreen extends StatefulWidget {
   const CreateLobbyScreen({super.key});
@@ -47,7 +48,7 @@ class _CreateLobbyScreenState
                     await roomService.createRoom(
                   roomName: controller.text,
                   ownerId:
-                      supabase.auth.currentUser!.id,
+                      await CurrentUser.getId(),
                 );
 
                 Navigator.pushReplacement(
