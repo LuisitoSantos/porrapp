@@ -7,12 +7,12 @@ import 'package:porrapp/features/lobby/screens/lobby_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String username;
-  final String userId;
+  final String user_id;
 
   const HomeScreen({
     super.key,
     required this.username,
-    required this.userId,
+    required this.user_id,
   });
 
   @override

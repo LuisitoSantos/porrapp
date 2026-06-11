@@ -4,6 +4,7 @@ import '../../tournament/models/knockout_match.dart';
 import '../../../core/supabase/supabase_client.dart';
 import '../../tournament/models/team.dart';
 import '../../../core/utils/flag_utils.dart';
+import '../../../core/services/local_storage_service.dart';
 
 class KnockoutScreen extends StatefulWidget {
   final String roomId;
@@ -507,7 +508,7 @@ Future<void> loadKnockoutBracket() async {
           )
           .eq(
             'user_id',
-            supabase.auth.currentUser!.id,
+            await CurrentUser.getId(),
           )
           .eq(
             'prediction_type',
@@ -718,7 +719,7 @@ async {
     .upsert(
       {
         'room_id': widget.roomId,
-        'user_id': supabase.auth.currentUser!.id,
+        'user_id':await CurrentUser.getId(),
         'prediction_type': 'knockout_stage',
         'data': knockoutData,
       },
@@ -771,7 +772,7 @@ Future<void> loadKnockoutBracket1() async {
             .eq('room_id', widget.roomId)
             .eq(
               'user_id',
-              supabase.auth.currentUser!.id,
+              await CurrentUser.getId(),
             )
             .eq(
               'prediction_type',

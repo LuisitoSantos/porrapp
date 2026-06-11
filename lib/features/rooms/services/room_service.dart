@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart';
 import '../models/room.dart';
 import '../models/room_member.dart';
+import '../../../core/services/local_storage_service.dart';
 
 final supabase =
     Supabase.instance.client;
@@ -73,7 +74,7 @@ Future<Room?> joinRoom(
         'room_id':
             response['id'],
         'user_id':
-            supabase.auth.currentUser!.id,
+            await CurrentUser.getId(),
       });
 
   return Room.fromJson(
@@ -124,13 +125,16 @@ getRoomMemberUsernames(
 Future<List<Room>> getMyRooms() async {
 
   final userId =
-      supabase.auth.currentUser!.id;
+    await CurrentUser.getId();
 
   final memberships =
-      await supabase
-          .from('room_members')
-          .select('room_id')
-          .eq('user_id', userId);
+    await supabase
+        .from('room_members')
+        .select('room_id')
+        .eq(
+          'user_id',
+          userId,
+        );
 
   final roomIds =
       memberships
@@ -202,7 +206,7 @@ Future<bool> hasSubmittedPrediction({
           .eq('room_id', roomId)
           .eq(
             'user_id',
-            supabase.auth.currentUser!.id,
+            await CurrentUser.getId(),
           )
           .maybeSingle();
 
@@ -306,7 +310,7 @@ Future<bool> hasSubmittedGroupStage({
           .eq('room_id', roomId)
           .eq(
             'user_id',
-            supabase.auth.currentUser!.id,
+            await CurrentUser.getId(),
           )
           .eq(
             'prediction_type',
@@ -328,7 +332,7 @@ Future<bool> hasSubmittedKnockout({
           .eq('room_id', roomId)
           .eq(
             'user_id',
-            supabase.auth.currentUser!.id,
+            await CurrentUser.getId(),
           )
           .eq(
             'prediction_type',
