@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - master
+      
+  pull_request:
+    branches:
+      - master
 
 permissions:
   contents: write
@@ -11,6 +15,7 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
 
     steps:
       - name: Checkout
