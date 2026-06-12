@@ -39,6 +39,20 @@ class LocalStorageService {
       usernameKey,
     );
   }
+
+  Future<void> clearUser() async {
+
+  final prefs =
+      await SharedPreferences.getInstance();
+
+  await prefs.remove(
+    userIdKey,
+  );
+
+  await prefs.remove(
+    usernameKey,
+  );
+}
 }
 
 class CurrentUser {
