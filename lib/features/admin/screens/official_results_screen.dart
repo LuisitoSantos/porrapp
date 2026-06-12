@@ -67,23 +67,22 @@ class _OfficialResultsScreenState
           ...matches.map(
             buildMatchCard,
           ),
-
-          const SizedBox(
-            height: 24,
-          ),
-
-          Padding(
-            padding:
-                const EdgeInsets.all(16),
-            child: ElevatedButton(
-            onPressed: saveResults,
-            child: const Text(
-              'Guardar resultados',
-            ),
-          ),
-          ),
         ],
       ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SizedBox(
+            height: 55,
+            child: ElevatedButton(
+              onPressed: saveResults,
+              child: const Text(
+                'Guardar resultados',
+              ),
+            ),
+          ),
+        ),
+      )
     );
   }
   Widget buildMatchCard(

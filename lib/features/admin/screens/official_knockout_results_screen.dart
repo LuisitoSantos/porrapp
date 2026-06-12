@@ -83,22 +83,7 @@ class _OfficialKnockoutResultsScreenState
                 ),
               ],
             ),
-          ),
-
-          const SizedBox(height: 24),
-          Padding(
-            padding:
-                const EdgeInsets.all(16),
-            child: ElevatedButton(
-              onPressed:
-                  saveOfficialKnockoutResults,
-              child: const Text(
-                'Guardar resultados',
-              ),
-            ),
-          ),
-
-          
+          ),       
 
           if (!tournamentFinished)
             ElevatedButton(
@@ -137,6 +122,13 @@ class _OfficialKnockoutResultsScreenState
               ),
             ],
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: saveOfficialKnockoutResults,
+        icon: const Icon(Icons.save),
+        label: const Text(
+          'Guardar resultados',
+        ),
       ),
     );
   }

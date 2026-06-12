@@ -160,50 +160,47 @@ bool knockoutSubmitted = false;
             const SizedBox(height: 24),
 
             if (!knockoutEnabled &&
-                 !groupStageSubmitted)
-                ElevatedButton(
-                  onPressed: () async {
-
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            GroupStageScreen(
-                          roomId: widget.room.id,
-                        ),
+                !groupStageSubmitted)
+              ElevatedButton(
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => GroupStageScreen(
+                        roomId: widget.room.id,
                       ),
-                    );
-                    await refreshLobby();
-                  },
-                  child: Text(
-                    knockoutEnabled
-                        ? 'Completar eliminatorias'
-                        : 'Completar fase de grupos',
-                  ),
-                ),
-                if (
-                  knockoutEnabled &&
-                  !knockoutSubmitted
-                )
-                ElevatedButton(
-                  onPressed: () async {
+                    ),
+                  );
 
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            KnockoutScreen(
-                          roomId: widget.room.id,
-                        ),
+                  await refreshLobby();
+                },
+                child: const Text(
+                  'Completar fase de grupos',
+                ),
+              ),
+
+            if (knockoutEnabled &&
+                !knockoutSubmitted) ...[
+              const SizedBox(height: 12),
+
+              ElevatedButton(
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => KnockoutScreen(
+                        roomId: widget.room.id,
                       ),
-                    );
+                    ),
+                  );
 
-                    await refreshLobby();
-                  },
-                  child: Text(
-                    'Completar eliminatorias',
-                  ),
+                  await refreshLobby();
+                },
+                child: const Text(
+                  'Completar eliminatorias',
                 ),
+              ),
+            ],
             if (isAdmin)
               ElevatedButton(
                 onPressed: () async {
