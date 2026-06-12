@@ -861,6 +861,15 @@ Future<void> showMyPredictions() async {
           .maybeSingle();
 
   if (predictions == null) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Todavía no has enviado tu fase de grupos',
+        ),
+      ),
+    );
+
     return;
   }
 
