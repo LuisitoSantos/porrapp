@@ -156,9 +156,10 @@ class ScoringService {
   }
 
   if (
+    official['groups_finished'] == true &&
     prediction['group_tables'] != null &&
     official['group_tables'] != null
-  ) {
+) {
 
     calculateGroupTablesPoints(
       score,
@@ -168,8 +169,9 @@ class ScoringService {
   }
 
   if (
-    prediction['best_third_placed'] != null &&
-    official['best_third_placed'] != null &&
+    official['groups_finished'] == true &&
+  prediction['best_third_placed'] != null &&
+  official['best_third_placed'] != null &&
     prediction['group_tables'] != null &&
     official['group_tables'] != null
   ) {

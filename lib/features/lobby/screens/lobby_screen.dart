@@ -403,9 +403,43 @@ Future<void> loadRanking() async {
   if (!mounted) return;
 
   setState(() {
-    userPoints = points;
-    userPositions = positions;
-  });
+
+  userPoints = points;
+
+  members.sort(
+    (a, b) =>
+      (userPoints[b.userId] ?? 0)
+          .compareTo(
+        userPoints[a.userId] ?? 0,
+      ),
+  );
+
+  userPositions.clear();
+
+  userPositions.clear();
+
+int currentPosition = 1;
+
+for (int i = 0; i < members.length; i++) {
+
+  if (i > 0) {
+
+    final currentPoints =
+        userPoints[members[i].userId] ?? 0;
+
+    final previousPoints =
+        userPoints[members[i - 1].userId] ?? 0;
+
+    if (currentPoints < previousPoints) {
+      currentPosition = i + 1;
+    }
+  }
+
+  userPositions[
+    members[i].userId
+  ] = currentPosition;
+}
+});
 }
 
 Future<void> showPredictionDialog(
