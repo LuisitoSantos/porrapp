@@ -57,6 +57,10 @@ bool knockoutSubmitted = false;
         title: Text(widget.room.name),
         actions: [
           IconButton(
+            icon: const Icon(Icons.table_chart),
+            onPressed: showMyPredictions,
+          ),
+          IconButton(
             icon: const Icon(Icons.help_outline),
             onPressed: showScoringRules,
           ),
@@ -834,6 +838,133 @@ void showScoringRules() {
         ],
       );
     },
+  );
+}
+Future<void> showMyPredictions() async {
+
+  final predictions =
+      await supabase
+          .from('predictions')
+          .select()
+          .eq(
+            'room_id',
+            widget.room.id,
+          )
+          .eq(
+            'user_id',
+            currentUserId!,
+          )
+          .eq(
+            'prediction_type',
+            'group_stage',
+          )
+          .maybeSingle();
+
+  if (predictions == null) {
+    return;
+  }
+
+  final data =
+      Map<String, dynamic>.from(
+    predictions['data'],
+  );
+
+  if (!mounted) return;
+
+  showDialog(
+    context: context,
+    builder: (_) {
+
+      return AlertDialog(
+        title: const Text(
+          'Mis pronósticos',
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: buildGroupMatches(
+              data,
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}
+Widget buildGroupMatches(
+  Map data,
+) {
+  final matches =
+      List<dynamic>.from(
+    data['group_matches'] ?? [],
+  );
+
+  final bestThirdPlaced =
+      List<String>.from(
+    data['best_third_placed'] ?? [],
+  );
+
+  return Column(
+    crossAxisAlignment:
+        CrossAxisAlignment.start,
+    children: [
+
+      const Text(
+        'Partidos pronosticados',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+      ),
+
+      const SizedBox(height: 12),
+
+      ...matches.map(
+        (match) {
+
+          return Padding(
+            padding:
+                const EdgeInsets.only(
+              bottom: 6,
+            ),
+            child: Text(
+              '[${match['group']}] '
+              '${match['home_team']} '
+              '${match['home_goals']} - '
+              '${match['away_goals']} '
+              '${match['away_team']}',
+            ),
+          );
+        },
+      ),
+
+      const SizedBox(height: 20),
+
+      const Divider(),
+
+      const SizedBox(height: 12),
+
+      const Text(
+        'Mejores terceros',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+      ),
+
+      const SizedBox(height: 8),
+
+      ...bestThirdPlaced.asMap().entries.map(
+        (entry) => Padding(
+          padding: const EdgeInsets.only(
+            bottom: 4,
+          ),
+          child: Text(
+            '${entry.key + 1}. ${entry.value}',
+          ),
+        ),
+      ),
+    ],
   );
 }
 }

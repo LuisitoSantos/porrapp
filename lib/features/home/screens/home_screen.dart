@@ -4,6 +4,8 @@ import 'package:porrapp/features/lobby/screens/join_lobby_screen.dart';
 import '../../rooms/models/room.dart';
 import '../../rooms/services/room_service.dart';
 import 'package:porrapp/features/lobby/screens/lobby_screen.dart';
+import '../../../core/services/local_storage_service.dart';
+import '../../../main.dart';
 
 class HomeScreen extends StatefulWidget {
   final String username;
@@ -37,6 +39,14 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('PorrApp'),
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.logout,
+            ),
+            onPressed: logout,
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(24),
@@ -134,5 +144,63 @@ class _HomeScreenState extends State<HomeScreen> {
   setState(() {
     rooms = result;
   });
+}
+
+Future<void> logout() async {
+
+  final confirmed =
+      await showDialog<bool>(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text(
+        'Cerrar sesión',
+      ),
+      content: const Text(
+        '¿Seguro que quieres cerrar sesión?',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(
+              context,
+              false,
+            );
+          },
+          child: const Text(
+            'Cancelar',
+          ),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(
+              context,
+              true,
+            );
+          },
+          child: const Text(
+            'Salir',
+          ),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed != true) {
+    return;
+  }
+
+  await LocalStorageService()
+      .clearUser();
+
+  if (!mounted) return;
+
+  Navigator.of(context)
+      .pushAndRemoveUntil(
+    MaterialPageRoute(
+      builder: (_) =>
+          const StartupScreen(),
+    ),
+    (route) => false,
+  );
 }
 }
