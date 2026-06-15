@@ -458,6 +458,16 @@ Future<void> showPredictionDialog(
 
   if (!mounted) return;
 
+  final officialResults =
+    await supabase
+        .from('room_results')
+        .select()
+        .eq(
+          'room_id',
+          widget.room.id,
+        )
+        .maybeSingle();
+
   showDialog(
     context: context,
     builder: (_) {
@@ -469,7 +479,8 @@ Future<void> showPredictionDialog(
           width: double.maxFinite,
           child: buildPredictionContent(
             predictions,
-          ),
+            officialResults?['data'],
+          )
         ),
       );
     },
@@ -478,6 +489,7 @@ Future<void> showPredictionDialog(
 
 Widget buildPredictionContent(
   List<dynamic> predictions,
+  Map? officialData,
 ) {
 
   final groupPrediction =
@@ -503,6 +515,7 @@ Widget buildPredictionContent(
         if (groupPrediction.isNotEmpty)
           buildGroupSummary(
             groupPrediction.first['data'],
+            officialData,
           ),
 
         const SizedBox(height: 24),
@@ -510,6 +523,7 @@ Widget buildPredictionContent(
         if (knockoutPrediction.isNotEmpty)
           buildKnockoutSummary(
             knockoutPrediction.first['data'],
+            officialData,
           ),
       ],
     ),
@@ -517,6 +531,7 @@ Widget buildPredictionContent(
 }
 Widget buildGroupSummary(
   Map data,
+  Map? officialData,
 ) {
   final tables =
       Map<String,dynamic>.from(
@@ -574,6 +589,7 @@ Widget buildGroupSummary(
 }
 Widget buildKnockoutSummary(
   Map data,
+  Map? officialData,
 ) {
 
   Widget buildRound(
@@ -587,6 +603,11 @@ Widget buildKnockoutSummary(
             : List<dynamic>.from(
                 data[key],
               );
+
+    final officialMatches =
+        List<dynamic>.from(
+      officialData?[key] ?? [],
+    );
 
     if (matches.isEmpty) {
       return const SizedBox();
@@ -633,16 +654,58 @@ Widget buildKnockoutSummary(
               final qualified =
                   match['qualified_team'];
 
+                  final officialMatch =
+                officialMatches.where(
+                  (m) =>
+                      m['match_number'] ==
+                      match['match_number'],
+                ).firstOrNull;
+
+                int points = 0;
+
+                  if (officialMatch != null) {
+                  points = calculateKnockoutPoints(
+                    match,
+                    officialMatch,
+                  );
+                }
+
               return Padding(
                 padding:
                     const EdgeInsets.only(
                   bottom: 4,
                 ),
-                child: Text(
-                  qualified == null
-                      ? '$home $homeGoals - $awayGoals $away'
-                      : '$home $homeGoals - $awayGoals $away  ⭐ $qualified',
-                ),
+                child: Row(
+                  children: [
+
+                    Expanded(
+                      child: Text(
+                        qualified == null
+                            ? '$home $homeGoals - $awayGoals $away'
+                            : '$home $homeGoals - $awayGoals $away ⭐ $qualified',
+                      ),
+                    ),
+
+                    if (
+                      officialMatch != null &&
+                      officialMatch['home_goals'] != null &&
+                      officialMatch['away_goals'] != null
+                    )
+                      Text(
+                        '+$points',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: points == 3
+                              ? Colors.green
+                              : points == 2
+                                  ? Colors.orange
+                                  : points == 1
+                                      ? Colors.blue
+                                      : Colors.red,
+                        ),
+                      ),
+                  ],
+                )
               );
             },
           ),
@@ -761,9 +824,9 @@ void showScoringRules() {
 
                 SizedBox(height: 8),
 
-                Text('Resultado exacto  +3'),
-                Text('Diferencia de goles  +2'),
-                Text('Signo (1-X-2)  +1'),
+                Text('Resultado exacto  +4'),
+                Text('Diferencia de goles  +3'),
+                Text('Signo (1-X-2)  +2'),
 
                 SizedBox(height: 16),
 
@@ -822,9 +885,10 @@ void showScoringRules() {
 
                 SizedBox(height: 8),
 
-                Text('Resultado exacto  +3'),
-                Text('Diferencia de goles  +2'),
-                Text('Clasificado  +1'),
+                Text('Resultado exacto  +4'),
+                Text('Diferencia de goles  +3'),
+                Text('Clasificado  +2'),
+                Text('En caso de empate, se suma otro +1 si se acierta el equipo que clasifica'),
 
                 SizedBox(height: 16),
 
@@ -891,6 +955,16 @@ Future<void> showMyPredictions() async {
           )
           .maybeSingle();
 
+  final officialResults =
+    await supabase
+        .from('room_results')
+        .select()
+        .eq(
+          'room_id',
+          widget.room.id,
+        )
+        .maybeSingle();        
+
   if (predictions == null) {
     ScaffoldMessenger.of(context)
         .showSnackBar(
@@ -900,6 +974,8 @@ Future<void> showMyPredictions() async {
         ),
       ),
     );
+
+
 
     return;
   }
@@ -923,8 +999,9 @@ Future<void> showMyPredictions() async {
           width: double.maxFinite,
           child: SingleChildScrollView(
             child: buildGroupMatches(
-              data,
-            ),
+            data,
+            officialResults?['data'],
+          ),
           ),
         ),
       );
@@ -933,11 +1010,17 @@ Future<void> showMyPredictions() async {
 }
 Widget buildGroupMatches(
   Map data,
+  Map? officialData,
 ) {
   final matches =
       List<dynamic>.from(
     data['group_matches'] ?? [],
   );
+
+  final officialMatches =
+    List<dynamic>.from(
+  officialData?['group_matches'] ?? [],
+);
 
   final bestThirdPlaced =
       List<String>.from(
@@ -962,19 +1045,90 @@ Widget buildGroupMatches(
       ...matches.map(
         (match) {
 
-          return Padding(
-            padding:
-                const EdgeInsets.only(
-              bottom: 6,
+          final officialMatch =
+    officialMatches.where(
+      (m) =>
+          m['match_number'] ==
+          match['match_number'],
+    ).firstOrNull;
+
+int points = 0;
+
+if (officialMatch != null) {
+
+  points = calculateMatchPoints(
+    match['home_goals'],
+    match['away_goals'],
+    officialMatch['home_goals'],
+    officialMatch['away_goals'],
+  );
+}
+
+Color color;
+/*
+switch (points) {
+  case 4:
+    color = Colors.green;
+    break;
+
+  case 3:
+    color = Colors.green;
+    break;
+
+  case 2:
+    color = Colors.green;
+    break;
+
+  default:
+    color = Colors.red;
+}*/
+
+switch (points) {
+  case 0:
+    color = Colors.red;
+    break;
+  default:
+    color = Colors.green;
+}
+
+      return Padding(
+        padding: const EdgeInsets.only(
+          bottom: 6,
+        ),
+        child: Row(
+          children: [
+
+            Expanded(
+              child: Text(
+                '[${match['group']}] '
+                '${match['home_team']} '
+                '${match['home_goals']} - '
+                '${match['away_goals']} '
+                '${match['away_team']}',
+              ),
             ),
-            child: Text(
-              '[${match['group']}] '
-              '${match['home_team']} '
-              '${match['home_goals']} - '
-              '${match['away_goals']} '
-              '${match['away_team']}',
-            ),
-          );
+
+            if (
+              officialMatch != null &&
+              officialMatch['home_goals'] != null &&
+              officialMatch['away_goals'] != null
+            )
+              Text(
+                '+$points',
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                ),
+              )
+            else
+              const Icon(
+                Icons.schedule,
+                size: 16,
+                color: Colors.grey,
+              ),
+          ],
+        ),
+      );
         },
       ),
 
@@ -1006,5 +1160,137 @@ Widget buildGroupMatches(
       ),
     ],
   );
+}
+
+  int calculateMatchPoints(
+  int? predictedHome,
+  int? predictedAway,
+  int? officialHome,
+  int? officialAway,
+) {
+  if (
+    predictedHome == null ||
+    predictedAway == null ||
+    officialHome == null ||
+    officialAway == null
+  ) {
+    return 0;
+  }
+
+  final predictedDiff =
+      predictedHome - predictedAway;
+
+  final officialDiff =
+      officialHome - officialAway;
+
+  final predictedWinner =
+      predictedDiff.sign;
+
+  final officialWinner =
+      officialDiff.sign;
+
+  if (
+    predictedHome == officialHome &&
+    predictedAway == officialAway
+  ) {
+    //return 3;
+    return 4;
+  }
+
+  if (
+    predictedDiff == officialDiff
+  ) {
+    //return 2;
+    return 3;
+  }
+
+  if (
+    predictedWinner == officialWinner
+  ) {
+    //return 1;
+    return 2;
+  }
+
+  return 0;
+}
+
+int calculateKnockoutPoints(
+  Map prediction,
+  Map official,
+) {
+  final predictedHome =
+      prediction['home_goals'];
+
+  final predictedAway =
+      prediction['away_goals'];
+
+  final officialHome =
+      official['home_goals'];
+
+  final officialAway =
+      official['away_goals'];
+
+  if (
+    predictedHome == null ||
+    predictedAway == null ||
+    officialHome == null ||
+    officialAway == null
+  ) {
+    return 0;
+  }
+
+  final predictedQualified =
+      prediction['qualified_team'];
+
+  final officialQualified =
+      official['qualified_team'];
+
+  // Resultado exacto
+  if (
+    predictedHome == officialHome &&
+    predictedAway == officialAway
+  ) {
+
+    int points = 4;
+
+    // Si el resultado exacto es empate,
+    // también premiamos acertar quién pasa.
+    if (
+      officialHome == officialAway &&
+      predictedQualified != null &&
+      predictedQualified ==
+          officialQualified
+    ) {
+      points += 2;
+    }
+
+    return points;
+  }
+
+  int points = 0;
+
+  final predictedDiff =
+      predictedHome - predictedAway;
+
+  final officialDiff =
+      officialHome - officialAway;
+
+  // Diferencia
+  if (
+    predictedDiff == officialDiff
+  ) {
+    points += 3;
+  }
+
+  // Clasificado
+  if (
+    predictedQualified != null &&
+    predictedQualified ==
+        officialQualified
+  ) {
+    points += 2;
+  }
+
+  return points;
 }
 }

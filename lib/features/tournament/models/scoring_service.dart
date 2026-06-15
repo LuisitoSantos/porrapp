@@ -190,6 +190,7 @@ class ScoringService {
   );
 }
 
+/*
   int calculateMatchPoints(
     int? predictedHome,
     int? predictedAway,
@@ -246,6 +247,59 @@ class ScoringService {
 
     return points;
   }
+  */
+
+  int calculateMatchPoints(
+  int? predictedHome,
+  int? predictedAway,
+  int? officialHome,
+  int? officialAway,
+) {
+  if (
+    predictedHome == null ||
+    predictedAway == null ||
+    officialHome == null ||
+    officialAway == null
+  ) {
+    return 0;
+  }
+
+  final predictedDiff =
+      predictedHome - predictedAway;
+
+  final officialDiff =
+      officialHome - officialAway;
+
+  final predictedWinner =
+      predictedDiff.sign;
+
+  final officialWinner =
+      officialDiff.sign;
+
+  if (
+    predictedHome == officialHome &&
+    predictedAway == officialAway
+  ) {
+    //return 3;
+    return 4;
+  }
+
+  if (
+    predictedDiff == officialDiff
+  ) {
+    //return 2;
+    return 3;
+  }
+
+  if (
+    predictedWinner == officialWinner
+  ) {
+    //return 1;
+    return 2;
+  }
+
+  return 0;
+}
 
   void calculateGroupTablesPoints(
     ScoreBreakdown score,
@@ -428,12 +482,10 @@ class ScoringService {
       }
 
       score.knockoutMatches +=
-          calculateMatchPoints(
-        p['home_goals'],
-        p['away_goals'],
-        o['home_goals'],
-        o['away_goals'],
-      );
+    calculateKnockoutPoints(
+      p,
+      o,
+    );
     }
   }
 
@@ -594,5 +646,85 @@ class ScoringService {
       official,
     );
   }
+}
+
+int calculateKnockoutPoints(
+  Map prediction,
+  Map official,
+) {
+  final predictedHome =
+      prediction['home_goals'];
+
+  final predictedAway =
+      prediction['away_goals'];
+
+  final officialHome =
+      official['home_goals'];
+
+  final officialAway =
+      official['away_goals'];
+
+  if (
+    predictedHome == null ||
+    predictedAway == null ||
+    officialHome == null ||
+    officialAway == null
+  ) {
+    return 0;
+  }
+
+  final predictedQualified =
+      prediction['qualified_team'];
+
+  final officialQualified =
+      official['qualified_team'];
+
+  // Resultado exacto
+  if (
+    predictedHome == officialHome &&
+    predictedAway == officialAway
+  ) {
+
+    int points = 4;
+
+    // Si el resultado exacto es empate,
+    // también premiamos acertar quién pasa.
+    if (
+      officialHome == officialAway &&
+      predictedQualified != null &&
+      predictedQualified ==
+          officialQualified
+    ) {
+      points += 2;
+    }
+
+    return points;
+  }
+
+  int points = 0;
+
+  final predictedDiff =
+      predictedHome - predictedAway;
+
+  final officialDiff =
+      officialHome - officialAway;
+
+  // Diferencia
+  if (
+    predictedDiff == officialDiff
+  ) {
+    points += 3;
+  }
+
+  // Clasificado
+  if (
+    predictedQualified != null &&
+    predictedQualified ==
+        officialQualified
+  ) {
+    points += 2;
+  }
+
+  return points;
 }
 }
