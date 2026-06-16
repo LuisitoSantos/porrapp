@@ -38,6 +38,7 @@ List<RoomMember> members = [];
 
 Map<String, int> userPoints = {};
 Map<String, int> userPositions = {};
+Map<String, int> previousPositions = {};
 
 bool groupStageSubmitted = false;
 bool knockoutSubmitted = false;
@@ -93,13 +94,28 @@ bool knockoutSubmitted = false;
             const SizedBox(height: 12),
             ...members.map(
               (member) => Card(
+                color: member.userId == currentUserId
+                ? Colors.blue.shade50
+                : null,
                 child: ListTile(
                   onTap: () async {
                     showPredictionDialog(member);
                   },
 
-                  leading: buildPosition(
-                    userPositions[member.userId] ?? 0,
+                  leading: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+
+                      buildPosition(
+                        userPositions[member.userId] ?? 0,
+                      ),
+
+                      const SizedBox(width: 4),
+
+                      buildPositionMovement(
+                        member.userId,
+                      ),
+                    ],
                   ),
 
                   title: Row(
@@ -107,11 +123,20 @@ bool knockoutSubmitted = false;
 
                       Expanded(
                         child: Text(
-                          member.isOwner
-                              ? '${member.username} ⚙️'
-                              : member.username,
+                          member.username,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
                       ),
+
+                      if (member.isOwner)
+                        const Padding(
+                          padding: EdgeInsets.only(left: 4),
+                          child: Icon(
+                            Icons.admin_panel_settings,
+                            size: 16,
+                          ),
+                        ),
 
                       Text(
                         '${userPoints[member.userId] ?? 0} pts',
@@ -130,10 +155,10 @@ bool knockoutSubmitted = false;
                         member.groupStageSubmitted
                             ? Icons.check_circle
                             : Icons.schedule,
-                        color:
-                            member.groupStageSubmitted
-                                ? Colors.green
-                                : Colors.orange,
+                        color: member.groupStageSubmitted
+                            ? Colors.green
+                            : Colors.orange,
+                        size: 14,
                       ),
 
                       const SizedBox(width: 8),
@@ -146,6 +171,7 @@ bool knockoutSubmitted = false;
                             member.knockoutSubmitted
                                 ? Colors.green
                                 : Colors.orange,
+                        size: 14,
                       ),
                     ],
                   ),
@@ -365,14 +391,17 @@ Future<void> loadRanking() async {
             widget.room.id,
           )
           .order(
-            'total_points',
-            ascending: false,
+            'position',
+            ascending: true,
           );
 
   final points =
       <String, int>{};
 
   final positions =
+      <String, int>{};
+
+  final previous =
       <String, int>{};
 
   for (
@@ -390,49 +419,33 @@ Future<void> loadRanking() async {
 
     positions[
       score['user_id']
-    ] = i + 1;
+    ] =
+        score['position'] ?? (i + 1);
+
+    previous[
+      score['user_id']
+    ] =
+        score['previous_position'] ?? 0;
   }
 
   if (!mounted) return;
 
   setState(() {
 
-  userPoints = points;
+    userPoints = points;
 
-  members.sort(
-    (a, b) =>
-      (userPoints[b.userId] ?? 0)
-          .compareTo(
-        userPoints[a.userId] ?? 0,
+    userPositions = positions;
+
+    previousPositions = previous;
+
+    members.sort(
+      (a, b) =>
+          (userPositions[a.userId] ?? 999)
+              .compareTo(
+        userPositions[b.userId] ?? 999,
       ),
-  );
-
-  userPositions.clear();
-
-  userPositions.clear();
-
-int currentPosition = 1;
-
-for (int i = 0; i < members.length; i++) {
-
-  if (i > 0) {
-
-    final currentPoints =
-        userPoints[members[i].userId] ?? 0;
-
-    final previousPoints =
-        userPoints[members[i - 1].userId] ?? 0;
-
-    if (currentPoints < previousPoints) {
-      currentPosition = i + 1;
-    }
-  }
-
-  userPositions[
-    members[i].userId
-  ] = currentPosition;
-}
-});
+    );
+  });
 }
 
 Future<void> showPredictionDialog(
@@ -1455,5 +1468,115 @@ int calculateKnockoutPoints(
   }
 
   return points;
+}
+Widget buildPositionChange(
+  String userId,
+) {
+
+  final current =
+      userPositions[userId];
+
+  final previous =
+      previousPositions[userId];
+
+  if (
+    current == null ||
+    previous == null
+  ) {
+    return const SizedBox();
+  }
+
+  if (current < previous) {
+    return const Icon(
+      Icons.arrow_upward,
+      color: Colors.green,
+      size: 18,
+    );
+  }
+
+  if (current > previous) {
+    return const Icon(
+      Icons.arrow_downward,
+      color: Colors.red,
+      size: 18,
+    );
+  }
+
+  return const Icon(
+    Icons.remove,
+    color: Colors.grey,
+    size: 18,
+  );
+}
+Widget buildPositionMovement(
+  String userId,
+) {
+
+  final current =
+      userPositions[userId] ?? 0;
+
+  final previous =
+      previousPositions[userId] ?? current;
+
+  if (previous == 0) {
+    return const SizedBox();
+  }
+
+  final difference =
+      (previous - current).abs();
+
+  if (current < previous) {
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+
+        const Icon(
+          Icons.arrow_upward,
+          color: Colors.green,
+          size: 12,
+        ),
+
+        Text(
+          '$difference',
+          style: const TextStyle(
+            color: Colors.green,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
+  }
+
+  if (current > previous) {
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+
+        const Icon(
+          Icons.arrow_downward,
+          color: Colors.red,
+          size: 12,
+        ),
+
+        Text(
+          '$difference',
+          style: const TextStyle(
+            color: Colors.red,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
+  }
+
+  return const Icon(
+    Icons.remove,
+    color: Colors.grey,
+    size: 18,
+  );
 }
 }
