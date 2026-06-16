@@ -7,6 +7,9 @@ import 'features/onboarding/screens/username_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/supabase/supabase_client.dart';
 import 'features/onboarding/screens/login_screen.dart';
+import 'package:flutter/foundation.dart';
+import 'package:universal_html/html.dart' as html;
+import 'package:package_info_plus/package_info_plus.dart';
 
 void main()async  {
    WidgetsFlutterBinding.ensureInitialized();
@@ -49,10 +52,20 @@ class _StartupScreenState
   String? email;
 
   @override
-  void initState() {
-    super.initState();
-    loadUser();
-  }
+void initState() {
+  super.initState();
+
+  loadStartup();
+}
+
+Future<void> loadStartup() async {
+
+  await checkAppVersion();
+
+  if (!mounted) return;
+
+  await loadUser();
+}
 
   Future<void> loadUser() async {
 
@@ -197,6 +210,94 @@ class _StartupScreenState
     SnackBar(
       content: Text(message),
     ),
+  );
+}
+Future<void> checkAppVersion() async {
+
+  try {
+
+    final packageInfo =
+        await PackageInfo.fromPlatform();
+
+    final currentVersion =
+        packageInfo.version;
+
+    final result =
+        await supabase
+            .from('app_config')
+            .select('value')
+            .eq(
+              'key',
+              'app_version',
+            )
+            .single();
+
+    final remoteVersion =
+        result['value'] as String;
+
+    if (
+      remoteVersion !=
+      currentVersion
+    ) {
+
+      if (!mounted) return;
+
+      showUpdateDialog();
+    }
+
+  } catch (e) {
+
+    debugPrint(
+      'Error comprobando versión: $e',
+    );
+  }
+}
+void showUpdateDialog() {
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) {
+
+      return AlertDialog(
+        title: const Text(
+          'Nueva versión disponible',
+        ),
+
+        content: const Text(
+          'Hay una nueva versión de la aplicación disponible.',
+        ),
+
+        actions: [
+
+          ElevatedButton(
+            onPressed: () {
+
+              if (kIsWeb) {
+
+                html.window.location.reload();
+
+              } else {
+
+                Navigator.pop(context);
+
+                ScaffoldMessenger.of(context)
+                    .showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Reabre la aplicación para aplicar la actualización.',
+                    ),
+                  ),
+                );
+              }
+            },
+            child: const Text(
+              'Actualizar',
+            ),
+          ),
+        ],
+      );
+    },
   );
 }
 }
