@@ -17,25 +17,68 @@ class ScorePersistenceService {
     roomId,
   );
 
+  final existingScores =
+    await supabase
+        .from('room_scores')
+        .select()
+        .eq(
+          'room_id',
+          roomId,
+        );
+
+    final oldPositions =
+        <String, int>{};
+
+    for (final row in existingScores) {
+
+      oldPositions[
+        row['user_id']
+      ] =
+          row['position'] ?? 0;
+    }
+
   final rows =
-      scores.map((score) {
-    return {
+    <Map<String, dynamic>>[];
+
+  for (
+    int i = 0;
+    i < scores.length;
+    i++
+  ) {
+
+    final score =
+        scores[i];
+
+    rows.add({
       'room_id': roomId,
-      'user_id': score.userId,
+
+      'user_id':
+          score.userId,
+
       'group_stage_points':
           score.breakdown.groupMatches +
           score.breakdown.groupTables +
           score.breakdown.qualifiedTeams,
+
       'knockout_points':
           score.breakdown.knockoutMatches +
           score.breakdown.semifinals +
           score.breakdown.finals +
           score.breakdown.champion +
           score.breakdown.runnerUp,
+
       'total_points':
           score.total,
-    };
-  }).toList();
+
+      'previous_position':
+          oldPositions[
+            score.userId
+          ],
+
+      'position':
+          i + 1,
+    });
+  }
 
   if (rows.isEmpty) return;
 
