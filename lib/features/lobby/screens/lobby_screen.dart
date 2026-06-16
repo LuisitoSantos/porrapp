@@ -57,10 +57,6 @@ bool knockoutSubmitted = false;
         title: Text(widget.room.name),
         actions: [
           IconButton(
-            icon: const Icon(Icons.table_chart),
-            onPressed: showMyPredictions,
-          ),
-          IconButton(
             icon: const Icon(Icons.help_outline),
             onPressed: showScoringRules,
           ),
@@ -506,27 +502,184 @@ Widget buildPredictionContent(
             'knockout_stage',
       );
 
+  final groupData =
+      groupPrediction.isNotEmpty
+          ? Map<String, dynamic>.from(
+              groupPrediction.first['data'],
+            )
+          : null;
+
+  final knockoutData =
+      knockoutPrediction.isNotEmpty
+          ? Map<String, dynamic>.from(
+              knockoutPrediction.first['data'],
+            )
+          : null;
+
+  final widgets = <Widget>[];
+
+  final groupsFinished =
+      officialData?['groups_finished'] == true;
+
+  final bestThirdPlaced =
+      List<String>.from(
+    groupData?['best_third_placed'] ?? [],
+  );
+
+  // ==========================
+  // YA EXISTE PORRA ELIMINATORIAS
+  // ==========================
+
+  if (knockoutData != null) {
+
+    widgets.add(
+      buildKnockoutSummary(
+        knockoutData,
+        officialData,
+      ),
+    );
+
+    widgets.add(
+      const SizedBox(height: 24),
+    );
+
+    if (groupData != null) {
+
+      widgets.add(
+        buildGroupSummary(
+          groupData,
+          officialData,
+        ),
+      );
+
+      widgets.add(
+        const SizedBox(height: 16),
+      );
+/*
+      addBestThirdPlaced(
+        widgets,
+        bestThirdPlaced,
+      );*/
+
+      widgets.add(
+        buildGroupMatches(
+          groupData,
+          officialData,
+        ),
+      );
+    }
+  }
+
+  // ==========================
+  // GRUPOS TERMINADOS
+  // ==========================
+
+  else if (groupsFinished) {
+
+    if (groupData != null) {
+
+      widgets.add(
+        buildGroupSummary(
+          groupData,
+          officialData,
+        ),
+      );
+
+      widgets.add(
+        const SizedBox(height: 16),
+      );
+/*
+      addBestThirdPlaced(
+        widgets,
+        bestThirdPlaced,
+      );*/
+
+      widgets.add(
+        buildGroupMatches(
+          groupData,
+          officialData,
+        ),
+      );
+    }
+  }
+
+  // ==========================
+  // GRUPOS EN JUEGO
+  // ==========================
+
+  else {
+
+  if (groupData != null) {
+
+    widgets.add(
+      buildGroupMatches(
+        groupData,
+        officialData,
+      ),
+    );
+
+    widgets.add(
+      const SizedBox(height: 16),
+    );
+
+    widgets.add(
+      buildGroupSummary(
+        groupData,
+        officialData,
+      ),
+    );
+
+    widgets.add(
+      const SizedBox(height: 16),
+    );
+
+/*
+    addBestThirdPlaced(
+      widgets,
+      bestThirdPlaced,
+    );
+    */
+  }
+}
+
   return SingleChildScrollView(
     child: Column(
       crossAxisAlignment:
           CrossAxisAlignment.start,
-      children: [
-
-        if (groupPrediction.isNotEmpty)
-          buildGroupSummary(
-            groupPrediction.first['data'],
-            officialData,
-          ),
-
-        const SizedBox(height: 24),
-
-        if (knockoutPrediction.isNotEmpty)
-          buildKnockoutSummary(
-            knockoutPrediction.first['data'],
-            officialData,
-          ),
-      ],
+      children: widgets,
     ),
+  );
+}
+void addBestThirdPlaced(
+  List<Widget> widgets,
+  List<String> bestThirdPlaced,
+) {
+
+  if (bestThirdPlaced.isEmpty) {
+    return;
+  }
+
+  widgets.add(
+    const Text(
+      'Mejores terceros',
+      style: TextStyle(
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  );
+
+  widgets.add(
+    const SizedBox(height: 8),
+  );
+
+  widgets.addAll(
+    bestThirdPlaced.map(
+      (team) => Text(team),
+    ),
+  );
+
+  widgets.add(
+    const SizedBox(height: 16),
   );
 }
 Widget buildGroupSummary(
@@ -538,16 +691,25 @@ Widget buildGroupSummary(
     data['group_tables'],
   );
 
+  final officialTables =
+    Map<String,dynamic>.from(
+  officialData?['group_tables'] ?? {},
+);
+
   return Column(
     crossAxisAlignment:
         CrossAxisAlignment.start,
     children: [
+      const Divider(),
+
+      const SizedBox(height: 12),
 
       const Text(
         'Fase de grupos',
         style: TextStyle(
           fontWeight:
               FontWeight.bold,
+              fontSize: 18
         ),
       ),
 
@@ -574,16 +736,119 @@ Widget buildGroupSummary(
                 ),
 
                 ...teams.asMap().entries.map(
-                  (team) =>
-                      Text(
-                    '${team.key + 1}. ${team.value}',
-                  ),
-                ),
+                (team) {
+
+                  final officialTeams =
+                      List<String>.from(
+                    officialTables[entry.key] ?? [],
+                  );
+
+                  final points =
+                      officialTeams.length > team.key &&
+                              officialTeams[team.key] ==
+                                  team.value
+                          ? 2
+                          : 0;
+
+                  return Row(
+                    children: [
+
+                      Expanded(
+                        child: Text(
+                          '${team.key + 1}. ${team.value}',
+                        ),
+                      ),
+
+                      if (
+                        officialData != null &&
+                        officialData['groups_finished'] == true
+                      )
+                        Text(
+                          '+$points',
+                          style: TextStyle(
+                            color: points > 0
+                                ? Colors.green
+                                : Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
               ],
             ),
           );
         },
       ),
+      const SizedBox(height: 10),
+
+      const Divider(),
+
+      const SizedBox(height: 10),
+
+      if (data['best_third_placed'] != null) ...[
+
+        const Text(
+          'Mejores terceros',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+
+        const SizedBox(height: 6),
+
+        ...List<String>.from(
+          data['best_third_placed'],
+        ).asMap().entries.map(
+          (entry) {
+
+            bool correct = false;
+
+            if (
+              officialData != null &&
+              officialData['best_third_placed'] != null
+            ) {
+
+              final officialThirds =
+                  List<String>.from(
+                officialData['best_third_placed'],
+              );
+
+              correct =
+                  officialThirds.contains(
+                entry.value,
+              );
+            }
+
+            return Row(
+              children: [
+
+                Expanded(
+                  child: Text(
+                    '${entry.key + 1}. ${entry.value}',
+                  ),
+                ),
+
+                if (
+                  officialData != null &&
+                  officialData['groups_finished'] == true
+                )
+                  Text(
+                    correct ? '+5' : '+0',
+                    style: TextStyle(
+                      color: correct
+                          ? Colors.green
+                          : Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ],
+      
     ],
   );
 }
@@ -809,7 +1074,7 @@ void showScoringRules() {
                   'FASE DE GRUPOS',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                    fontSize: 22,
                   ),
                 ),
 
@@ -935,79 +1200,7 @@ void showScoringRules() {
     },
   );
 }
-Future<void> showMyPredictions() async {
 
-  final predictions =
-      await supabase
-          .from('predictions')
-          .select()
-          .eq(
-            'room_id',
-            widget.room.id,
-          )
-          .eq(
-            'user_id',
-            currentUserId!,
-          )
-          .eq(
-            'prediction_type',
-            'group_stage',
-          )
-          .maybeSingle();
-
-  final officialResults =
-    await supabase
-        .from('room_results')
-        .select()
-        .eq(
-          'room_id',
-          widget.room.id,
-        )
-        .maybeSingle();        
-
-  if (predictions == null) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Todavía no has enviado tu fase de grupos',
-        ),
-      ),
-    );
-
-
-
-    return;
-  }
-
-  final data =
-      Map<String, dynamic>.from(
-    predictions['data'],
-  );
-
-  if (!mounted) return;
-
-  showDialog(
-    context: context,
-    builder: (_) {
-
-      return AlertDialog(
-        title: const Text(
-          'Mis pronósticos',
-        ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: SingleChildScrollView(
-            child: buildGroupMatches(
-            data,
-            officialResults?['data'],
-          ),
-          ),
-        ),
-      );
-    },
-  );
-}
 Widget buildGroupMatches(
   Map data,
   Map? officialData,
@@ -1021,11 +1214,6 @@ Widget buildGroupMatches(
     List<dynamic>.from(
   officialData?['group_matches'] ?? [],
 );
-
-  final bestThirdPlaced =
-      List<String>.from(
-    data['best_third_placed'] ?? [],
-  );
 
   return Column(
     crossAxisAlignment:
@@ -1132,32 +1320,7 @@ switch (points) {
         },
       ),
 
-      const SizedBox(height: 20),
-
-      const Divider(),
-
-      const SizedBox(height: 12),
-
-      const Text(
-        'Mejores terceros',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-        ),
-      ),
-
-      const SizedBox(height: 8),
-
-      ...bestThirdPlaced.asMap().entries.map(
-        (entry) => Padding(
-          padding: const EdgeInsets.only(
-            bottom: 4,
-          ),
-          child: Text(
-            '${entry.key + 1}. ${entry.value}',
-          ),
-        ),
-      ),
+      const SizedBox(height: 10),
     ],
   );
 }
