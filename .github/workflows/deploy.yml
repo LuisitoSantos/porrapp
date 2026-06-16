@@ -1,56 +1,56 @@
 name: Deploy to GitHub Pages
 
 on:
-push:
-branches:
-- master
+  push:
+    branches:
+      - master
 
-pull_request:
-branches:
-- master
+  pull_request:
+    branches:
+      - master
 
 permissions:
-contents: write
+  contents: write
 
 jobs:
-build-and-deploy:
-runs-on: ubuntu-latest
+  build-and-deploy:
+    runs-on: ubuntu-latest
 
-steps:
-  - name: Checkout
-    uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-  - name: Setup Flutter
-    uses: subosito/flutter-action@v2
-    with:
-      flutter-version: '3.x'
-      channel: 'stable'
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x'
+          channel: stable
 
-  - name: Install dependencies
-    run: flutter pub get
+      - name: Install dependencies
+        run: flutter pub get
 
-  - name: Build web
-    run: flutter build web --release --base-href /porrapp/
+      - name: Build web
+        run: flutter build web --release --base-href /porrapp/
 
-  - name: Extract build number
-    id: version
-    run: |
-      VERSION_LINE=$(grep '^version:' pubspec.yaml)
-      BUILD_NUMBER=$(echo $VERSION_LINE | cut -d '+' -f2)
-      echo "build=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+      - name: Extract build number
+        id: version
+        run: |
+          VERSION_LINE=$(grep '^version:' pubspec.yaml)
+          BUILD_NUMBER=$(echo $VERSION_LINE | cut -d '+' -f2)
+          echo "build=$BUILD_NUMBER" >> $GITHUB_OUTPUT
 
-  - name: Update Supabase version
-    run: |
-      curl -X PATCH \
-      "${{ secrets.SUPABASE_URL }}/rest/v1/app_config?key=eq.app_build" \
-      -H "apikey: ${{ secrets.SUPABASE_SERVICE_KEY }}" \
-      -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_KEY }}" \
-      -H "Content-Type: application/json" \
-      -H "Prefer: return=minimal" \
-      -d "{\"value\":\"${{ steps.version.outputs.build }}\"}"
+      - name: Update Supabase version
+        run: |
+          curl -X PATCH \
+          "${{ secrets.SUPABASE_URL }}/rest/v1/app_config?key=eq.app_build" \
+          -H "apikey: ${{ secrets.SUPABASE_SERVICE_KEY }}" \
+          -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_KEY }}" \
+          -H "Content-Type: application/json" \
+          -H "Prefer: return=minimal" \
+          -d "{\"value\":\"${{ steps.version.outputs.build }}\"}"
 
-  - name: Deploy to GitHub Pages
-    uses: peaceiris/actions-gh-pages@v4
-    with:
-      github_token: ${{ secrets.GITHUB_TOKEN }}
-      publish_dir: ./build/web
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
