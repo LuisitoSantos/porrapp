@@ -10,6 +10,7 @@ import 'features/onboarding/screens/login_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:package_info_plus/package_info_plus.dart';
+import 'features/home/screens/SplashScreen.dart';
 
 void main()async  {
    WidgetsFlutterBinding.ensureInitialized();
@@ -28,8 +29,9 @@ class PorrApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
+      title: 'PorrApp',
       debugShowCheckedModeBanner: false,
-      home: StartupScreen(),
+      home: const SplashScreen(),
     );
   }
 }
@@ -45,6 +47,7 @@ class StartupScreen extends StatefulWidget {
 class _StartupScreenState
     extends State<StartupScreen> {
 
+  bool loading = true;
   final storage =
       LocalStorageService();
 
@@ -69,39 +72,52 @@ Future<void> loadStartup() async {
 
   Future<void> loadUser() async {
 
-    final savedUsername =
-        await storage.getUsername();
+  final savedUsername =
+      await storage.getUsername();
 
-    final savedEmail =
-        await storage.getUserId();
+  final savedEmail =
+      await storage.getUserId();
 
-    if (!mounted) return;
+  if (!mounted) return;
 
-    setState(() {
-      username = savedUsername;
-      email = savedEmail;
-    });
-  }
+  setState(() {
 
-  @override
-  Widget build(BuildContext context) {
+    username = savedUsername;
+    email = savedEmail;
 
-    if (
-      username == null ||
-      email == null
-    ) {
+    loading = false;
+  });
+}
 
-      return LoginScreen(
-        onRegister: registerUser,
-        onLogin: loginUser,
-      );
-    }
+@override
+Widget build(BuildContext context) {
 
-    return HomeScreen(
-      username: username!,
-      user_id: email!,
+  if (loading) {
+
+    return const Scaffold(
+      body: Center(
+        child:
+            CircularProgressIndicator(),
+      ),
     );
   }
+
+  if (
+    username == null ||
+    email == null
+  ) {
+
+    return LoginScreen(
+      onRegister: registerUser,
+      onLogin: loginUser,
+    );
+  }
+
+  return HomeScreen(
+    username: username!,
+    user_id: email!,
+  );
+}
 
   Future<void> registerUser(
     String email,

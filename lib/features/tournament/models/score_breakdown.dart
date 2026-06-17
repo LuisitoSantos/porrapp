@@ -2,7 +2,7 @@ class ScoreBreakdown {
 
   int groupMatches = 0;
   int groupTables = 0;
-  int qualifiedTeams = 0;
+  //int qualifiedTeams = 0;
 
   int knockoutMatches = 0;
 
@@ -18,7 +18,7 @@ class ScoreBreakdown {
   int get total =>
       groupMatches +
       groupTables +
-      qualifiedTeams +
+      //qualifiedTeams +
       knockoutMatches +
       semifinals +
       finals +
@@ -30,7 +30,7 @@ class ScoreBreakdown {
   return {
     'group_matches': groupMatches,
     'group_tables': groupTables,
-    'qualified_teams': qualifiedTeams,
+    //'qualified_teams': qualifiedTeams,
     'knockout_matches': knockoutMatches,
     'semi_finalists': semifinals,
     'finalists': finals,
