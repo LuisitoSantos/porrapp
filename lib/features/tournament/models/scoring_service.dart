@@ -168,6 +168,7 @@ class ScoringService {
     );
   }
 
+/*
   if (
     official['groups_finished'] == true &&
   prediction['best_third_placed'] != null &&
@@ -182,6 +183,7 @@ class ScoringService {
       official,
     );
   }
+  */
 
   calculateIndividualAwards(
     score,
@@ -300,7 +302,99 @@ class ScoringService {
 
   return 0;
 }
+void calculateGroupTablesPoints(
+  ScoreBreakdown score,
+  Map prediction,
+  Map official,
+) {
 
+  final predicted =
+      Map<String,dynamic>.from(
+    prediction['group_tables'],
+  );
+
+  final real =
+      Map<String,dynamic>.from(
+    official['group_tables'],
+  );
+
+    final predictionThirdPlaced =
+      List<String>.from(
+    prediction['best_third_placed'] ?? [],
+  );
+
+  final officialThirdPlaced =
+      List<String>.from(
+    official['best_third_placed'] ?? [],
+  );
+
+  for (final group in real.keys) {
+
+    final predictedGroup =
+        List<String>.from(
+      predicted[group],
+    );
+
+    final officialGroup =
+        List<String>.from(
+      real[group],
+    );
+
+    bool perfectGroup = true;
+
+    // +2 posición exacta
+    for (
+      int i = 0;
+      i < officialGroup.length;
+      i++
+    ) {
+
+      if (
+        predictedGroup[i] ==
+        officialGroup[i]
+      ) {
+
+        score.groupTables += 2;
+
+      } else {
+
+        perfectGroup = false;
+      }
+    }
+
+    // +1 clasificado aunque en posición incorrecta
+    final predictedQualified = {
+      predictedGroup[0],
+      predictedGroup[1],
+      ...predictionThirdPlaced,
+    };
+
+    final officialQualified = {
+      officialGroup[0],
+      officialGroup[1],
+      ...officialThirdPlaced,
+    };
+
+    for (final team in predictedQualified) {
+
+      if (
+        officialQualified.contains(team) &&
+        predictedGroup.indexOf(team) !=
+            officialGroup.indexOf(team)
+      ) {
+
+        score.groupTables += 1;
+      }
+    }
+
+    // Bonus grupo perfecto
+    if (perfectGroup) {
+
+      score.groupTables += 2;
+    }
+  }
+}
+/*
   void calculateGroupTablesPoints(
     ScoreBreakdown score,
     Map prediction,
@@ -344,7 +438,8 @@ class ScoringService {
       }
     }
   }
-
+  */
+/*
   void calculateQualifiedTeamsPoints(
     ScoreBreakdown score,
     Map prediction,
@@ -417,7 +512,7 @@ class ScoringService {
         score.qualifiedTeams += 5;
       }
     }
-  }
+  }*/
 
   void calculateIndividualAwards(
   ScoreBreakdown score,

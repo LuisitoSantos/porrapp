@@ -40,45 +40,52 @@ class ScorePersistenceService {
   final rows =
     <Map<String, dynamic>>[];
 
-  for (
-    int i = 0;
-    i < scores.length;
-    i++
-  ) {
+  int currentPosition = 1;
 
-    final score =
-        scores[i];
+for (int i = 0; i < scores.length; i++) {
 
-    rows.add({
-      'room_id': roomId,
+  final score = scores[i];
 
-      'user_id':
-          score.userId,
+  if (i > 0) {
 
-      'group_stage_points':
-          score.breakdown.groupMatches +
-          score.breakdown.groupTables +
-          score.breakdown.qualifiedTeams,
+    final previousScore = scores[i - 1];
 
-      'knockout_points':
-          score.breakdown.knockoutMatches +
-          score.breakdown.semifinals +
-          score.breakdown.finals +
-          score.breakdown.champion +
-          score.breakdown.runnerUp,
-
-      'total_points':
-          score.total,
-
-      'previous_position':
-          oldPositions[
-            score.userId
-          ],
-
-      'position':
-          i + 1,
-    });
+    if (score.total < previousScore.total) {
+      currentPosition = i + 1;
+    }
   }
+
+  rows.add({
+    'room_id': roomId,
+
+    'user_id': score.userId,
+
+    'group_stage_points':
+        score.breakdown.groupMatches +
+        score.breakdown.groupTables,
+
+        /*
+    'group_stage_points':
+        score.breakdown.groupMatches +
+        score.breakdown.groupTables +
+        score.breakdown.qualifiedTeams,
+        */
+
+    'knockout_points':
+        score.breakdown.knockoutMatches +
+        score.breakdown.semifinals +
+        score.breakdown.finals +
+        score.breakdown.champion +
+        score.breakdown.runnerUp,
+
+    'total_points': score.total,
+
+    'previous_position':
+        oldPositions[score.userId],
+
+    'position': currentPosition,
+  });
+}
 
   if (rows.isEmpty) return;
 

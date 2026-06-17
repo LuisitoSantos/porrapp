@@ -709,6 +709,11 @@ Widget buildGroupSummary(
   officialData?['group_tables'] ?? {},
 );
 
+final bestThirdPlaced =
+      List<String>.from(
+    data['best_third_placed'] ?? [],
+  );
+
   return Column(
     crossAxisAlignment:
         CrossAxisAlignment.start,
@@ -734,6 +739,18 @@ Widget buildGroupSummary(
             entry.value,
           );
 
+          final officialTeams =
+              List<String>.from(
+            officialTables[entry.key] ?? [],
+          );
+
+          final perfectGroup =
+              teams.length == officialTeams.length &&
+              List.generate(
+                teams.length,
+                (i) => teams[i] == officialTeams[i],
+              ).every((e) => e);
+
           return Padding(
             padding:
                 const EdgeInsets.only(
@@ -756,12 +773,52 @@ Widget buildGroupSummary(
                     officialTables[entry.key] ?? [],
                   );
 
-                  final points =
-                      officialTeams.length > team.key &&
-                              officialTeams[team.key] ==
-                                  team.value
-                          ? 2
-                          : 0;
+                  int points = 0;
+                  final predictedPosition = team.key;
+
+                  final officialPosition =
+                      officialTeams.indexOf(
+                    team.value,
+                  );
+
+                  final officialBestThirds =
+                      List<String>.from(
+                    officialData?['best_third_placed'] ?? [],
+                  );
+
+                  final predictedTeam = team.value;
+
+                  final qualifiedOfficially =
+                      (officialPosition >= 0 &&
+                          officialPosition < 2) ||
+                      officialBestThirds.contains(
+                        predictedTeam,
+                      );
+
+                  final qualifiedPredicted =
+                      predictedPosition < 2 ||
+                      bestThirdPlaced.contains(
+                        predictedTeam,
+                      );
+
+                  // Posición exacta
+                  if (
+                    officialPosition != -1 &&
+                    officialPosition == predictedPosition
+                  ) {
+
+                    points = 2;
+
+                  }
+
+                  // Clasificado pero en otra posición
+                  else if (
+                    qualifiedPredicted &&
+                    qualifiedOfficially
+                  ) {
+
+                    points = 1;
+                  }
 
                   return Row(
                     children: [
@@ -789,6 +846,32 @@ Widget buildGroupSummary(
                   );
                 },
               ),
+              if (
+                officialData != null &&
+                officialData['groups_finished'] == true &&
+                perfectGroup
+              )
+                Row(
+                  children: const [
+
+                    Expanded(
+                      child: Text(
+                        'Bonus grupo completo',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+
+                    Text(
+                      '+2',
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           );
@@ -842,20 +925,6 @@ Widget buildGroupSummary(
                     '${entry.key + 1}. ${entry.value}',
                   ),
                 ),
-
-                if (
-                  officialData != null &&
-                  officialData['groups_finished'] == true
-                )
-                  Text(
-                    correct ? '+5' : '+0',
-                    style: TextStyle(
-                      color: correct
-                          ? Colors.green
-                          : Colors.red,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
               ],
             );
           },
@@ -1117,24 +1186,11 @@ void showScoringRules() {
 
                 SizedBox(height: 8),
 
-                Text(
-                  'Cada posición acertada  +2',
-                ),
-
-                SizedBox(height: 16),
-
-                Text(
-                  'Equipos clasificados',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text('Posición exacta +2'),
+                Text('Clasificado pero posición incorrecta +1'),
+                Text('Grupo completo correcto +2'),
 
                 SizedBox(height: 8),
-
-                Text(
-                  'Cada equipo clasificado  +5',
-                ),
 
                 Divider(height: 32),
 
@@ -1178,7 +1234,8 @@ void showScoringRules() {
                 ),
 
                 SizedBox(height: 8),
-
+                Text('Equipo en octavos +5'),
+                Text('Equipo en cuartos +5'),
                 Text('Semifinalista  +10'),
                 Text('Finalista  +15'),
                 Text('Campeón  +20'),
